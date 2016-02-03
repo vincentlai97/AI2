@@ -22,6 +22,8 @@ Mesh *archerMesh;
 Mesh *healerMesh;
 Mesh *monsterMesh;
 
+float spawnTimer;
+
 void MyModel::Init()
 {
 	srand(time(NULL));
@@ -56,12 +58,14 @@ void MyModel::Init()
 	monster = new Character();
 	monster->object = object;
 	monster->role = Character::ROLE::MONSTER;
+	RandomiseStats(monster);
 	monsters.push_back(monster);
 	
-
 	for (int count = 0; count < 3; ++count)
 		RandomiseStats(heroes[count]);
 	UpdateRoles();
+
+	spawnTimer = 10.f;
 }
 
 void MyModel::Update(double dt)
@@ -91,12 +95,56 @@ void MyModel::Update(double dt)
 	{
 		heroes[count]->UpdateState(heroes, monsters, dt);
 	}
-	monster->UpdateState(heroes, monsters, dt);
 	for (int count = 0; count < 3; ++count)
 	{
 		heroes[count]->Update(dt);
 	}
-	monster->Update(dt);
+	for (int count = 0; count < monsters.size(); ++count)
+	{
+		if (monsters[count]->hp < 0)
+		{
+			for (Character *iter : heroes)
+			{
+				if (iter->target == monsters[count])
+					iter->target = NULL;
+				if (iter->attacker == monsters[count])
+					iter->attacker = NULL;
+			}
+			delete monsters[count];
+			monsters.erase(monsters.begin() + count);
+		}
+	}
+	for (Character *iter : monsters)
+	{
+		iter->UpdateState(heroes, monsters, dt);
+	}
+	for (Character *iter : monsters)
+	{
+		iter->Update(dt);
+	}
+	for (Character *iter : heroes)
+	{
+		if (iter->hp < 0)
+		{
+			iter->object->translation = glm::translate<float>(-40, 0, 0);
+			RandomiseStats(iter);
+			UpdateRoles();
+		}
+	}
+
+	spawnTimer -= dt;
+	if (spawnTimer < 0)
+	{
+		object = new Object(monsterMesh);
+		m_objectList.push_back(object);
+		monster = new Character();
+		monster->object = object;
+		monster->object->translation = glm::translate<float>(40, 0, 0);
+		monster->role = Character::ROLE::MONSTER;
+		RandomiseStats(monster);
+		monsters.push_back(monster);
+		spawnTimer = 5.f;
+	}
 }
 
 void MyModel::RandomiseStats(Character *character)

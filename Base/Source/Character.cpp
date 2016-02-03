@@ -4,17 +4,30 @@
 
 void Character::UpdateState(std::array<Character *, 3> heroes, std::vector<Character *> monsters, double dt)
 {
-	float monsterDist = glm::distance(getPos(), monsters[0]->getPos());
+	float monsterDist = 100;
+	Character *monster;
+	for (Character *iter : monsters)
+	{
+		if (glm::distance(iter->getPos(), getPos()) < monsterDist)
+		{
+			monsterDist = glm::distance(iter->getPos(), getPos());
+			monster = iter;
+		}
+	}
 	switch (role)
 	{
 	case ROLE::KNIGHT:
-		if (2 < monsterDist && monsterDist < 15)
+		if (monsterDist < 2)
+		{
+			state = STATE::KNIGHT_ATTACK;
+		}
+		else if (monsterDist < 15)
 		{
 			state = STATE::KNIGHT_MOVE;
-			target = monsters[0];
+			target = monster;
 		}
 		else
-			state = STATE::KNIGHT_ATTACK;
+			state = STATE::KNIGHT_IDLE;
 		break;
 	case ROLE::ARCHER:
 		if (attacked)
@@ -24,13 +37,17 @@ void Character::UpdateState(std::array<Character *, 3> heroes, std::vector<Chara
 		}
 		if (!attacked)
 		{
-			if (10 < monsterDist && monsterDist < 20)
+			if (monsterDist < 10)
+			{
+				state = STATE::ARCHER_ATTACK;
+			}
+			else if (monsterDist < 20)
 			{
 				state = STATE::ARCHER_MOVE;
-				target = monsters[0];
+				target = monster;
 			}
 			else
-				state = STATE::ARCHER_ATTACK;
+				state = STATE::ARCHER_IDLE;
 		}
 		break;
 	case ROLE::HEALER:
@@ -57,41 +74,40 @@ void Character::UpdateState(std::array<Character *, 3> heroes, std::vector<Chara
 		break;
 	case ROLE::MONSTER:
 	{
-					Character closestHero;
-					float dist = 15;
-					static bool targetReached = true;
-					for (int count = 0; count < 3; ++count)
-					{
-						if (glm::distance(getPos(), heroes[count]->getPos()) < dist)
-						{
-							dist = glm::distance(getPos(), heroes[count]->getPos());
-							target = heroes[count];
-							targetReached = true;
-						}
-					}
-					if (dist < 2)
-						state = STATE::MONSTER_ATTACK;
-					else if (dist < 15)
-						state = STATE::MONSTER_MOVE;
-					else
-					{
-						if (!targetReached)
-						{
-							if (glm::distance(getPos(), target->getPos()) < 2)
-							{
-								delete target;
-								targetReached = true;
-							}
-						}
-						if (targetReached)
-						{
-							target = new Character(); 
-							target->object = new Object();
-							target->object->translation = glm::translate(glm::vec3(rand() % 100 - 50, rand() % 80 - 40, 0));
-							state = STATE::MONSTER_PATROL;
-							targetReached = false;
-						}
-					}
+						  Character closestHero;
+						  float dist = 15;
+						  for (int count = 0; count < 3; ++count)
+						  {
+							  if (glm::distance(getPos(), heroes[count]->getPos()) < dist)
+							  {
+								  dist = glm::distance(getPos(), heroes[count]->getPos());
+								  target = heroes[count];
+								  targetReached = true;
+							  }
+						  }
+						  if (dist < 2)
+							  state = STATE::MONSTER_ATTACK;
+						  else if (dist < 15)
+							  state = STATE::MONSTER_MOVE;
+						  else
+						  {
+							  if (!targetReached)
+							  {
+								  if (glm::distance(getPos(), target->getPos()) < 2)
+								  {
+									  delete target;
+									  targetReached = true;
+								  }
+							  }
+							  if (targetReached)
+							  {
+								  target = new Character();
+								  target->object = new Object();
+								  target->object->translation = glm::translate(glm::vec3(rand() % 100 - 50, rand() % 80 - 40, 0));
+								  state = STATE::MONSTER_PATROL;
+								  targetReached = false;
+							  }
+						  }
 	}
 		break;
 	default:
@@ -108,20 +124,36 @@ void Character::Update(double dt)
 	case ROLE::KNIGHT:
 		switch (state)
 		{
+		case STATE::KNIGHT_IDLE:
+			break;
 		case STATE::KNIGHT_MOVE:
 			Move(target->getPos() - getPos(), dt);
 			break;
 		case STATE::KNIGHT_ATTACK:
+			if (attackBuffer < 0)
+			{
+				if (target != NULL)
+					target->hp -= 10;
+				attackBuffer = 0.5f;
+			}
 			break;
 		}
 		break;
 	case ROLE::ARCHER:
 		switch (state)
 		{
+		case STATE::ARCHER_IDLE:
+			break;
 		case STATE::ARCHER_MOVE:
 			Move(target->getPos() - getPos(), dt);
 			break;
 		case STATE::ARCHER_ATTACK:
+			if (attackBuffer < 0)
+			{
+				if (target != NULL)
+					target->hp -= 10;
+				attackBuffer = 0.5f;
+			}
 			break;
 		case STATE::ARCHER_RETREAT:
 			Move(getPos() - attacker->getPos(), dt);
@@ -135,6 +167,12 @@ void Character::Update(double dt)
 			Move(target->getPos() - getPos(), dt);
 			break;
 		case STATE::HEALER_HEAL:
+			if (target != NULL)
+			if (attackBuffer < 0 && target->hp < target->getMaxHP())
+			{
+				target->hp += 10;
+				attackBuffer = 2.f;
+			}
 			break;
 		case STATE::HEALER_RETREAT:
 			Move(getPos() - attacker->getPos(), dt);
@@ -151,7 +189,8 @@ void Character::Update(double dt)
 		case STATE::MONSTER_ATTACK:
 			if (attackBuffer < 0)
 			{
-				target->hp -= 10;
+				if (target != NULL)
+					target->hp -= 10;
 				attackBuffer = 0.5f;
 			}
 			target->attacked = true;
@@ -169,5 +208,6 @@ void Character::Move(glm::vec3 direction, double dt)
 	else if (direction.x > 0 && getPos().x > 50) direction.x = 0;
 	if (direction.y < 0 && getPos().y < -40) direction.y = 0;
 	else if (direction.y > 0 && getPos().y > 40) direction.y = 0;
-	object->translation *= glm::translate(glm::normalize(direction) * (float)dt * (8.f + stats[1] / 25.f));
+	if (direction.length() != 0)
+		object->translation *= glm::translate(glm::normalize(direction) * (float)dt * (8.f + stats[1] / 25.f));
 }

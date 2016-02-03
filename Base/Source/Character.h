@@ -26,12 +26,15 @@ public:
 
 	enum class STATE
 	{
-		KNIGHT_MOVE = 0,
+		KNIGHT_IDLE = 0,
+		KNIGHT_MOVE,
 		KNIGHT_ATTACK,
-		ARCHER_MOVE = 0,
+		ARCHER_IDLE = 0,
+		ARCHER_MOVE,
 		ARCHER_ATTACK,
 		ARCHER_RETREAT,
-		HEALER_MOVE = 0,
+		HEALER_IDLE = 0,
+		HEALER_MOVE,
 		HEALER_HEAL,
 		HEALER_RETREAT,
 		MONSTER_PATROL = 0,
@@ -48,8 +51,9 @@ public:
 	float attackBuffer;
 	bool attacked;
 	Character *attacker;
+	bool targetReached;
 
-	Character() : attacked(false), attackBuffer(0)
+	Character() : attacked(false), attackBuffer(0), targetReached(true)
 	{
 		stats.fill(0);
 	};
@@ -62,6 +66,11 @@ public:
 	glm::vec3 getPos()
 	{
 		return glm::vec3(object->translation[3][0], object->translation[3][1], object->translation[3][2]);
+	}
+
+	int getMaxHP()
+	{
+		return 50 + stats[STR] / 2.f;
 	}
 };
 
