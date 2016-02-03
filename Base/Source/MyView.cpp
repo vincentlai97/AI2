@@ -1,6 +1,6 @@
 #include "MyView.h"
 
-#include "MyModel.h"
+#include "MeshBuilder.h"
 
 #define VIEW_DIMENSIONS 2
 
@@ -10,6 +10,28 @@ MyView::MyView(Model *model) : View(model)
 
 MyView::~MyView()
 {
+}
+
+void MyView::RenderCharacter(Character *character)
+{
+	static Mesh* healthbar = MeshBuilder::GenerateQuad("hpbar", Color(0, 1, 0), 1.f);
+	static Mesh* healthbar2 = MeshBuilder::GenerateQuad("hpbar", Color(1, 0, 0), 1.f);
+
+	modelStack.push(modelStack.top()); {
+		modelStack.top() *= character->object->translation;
+
+		RenderMesh(character->object->mesh, false);
+
+		modelStack.top() *= glm::translate<float>(0, 1, 0);
+		modelStack.push(modelStack.top()); {
+			modelStack.top() *= glm::scale(character->hp / 20.f, 0.5f, 1.f);
+
+			RenderMesh(healthbar, false);
+		} modelStack.pop();
+		modelStack.top() *= glm::scale(2.5f + character->stats[Character::STR] / 40.f, 0.5f, 1.f);
+
+		RenderMesh(healthbar2, false);
+	} modelStack.pop();
 }
 
 #define camera m_model->getCamera()
@@ -33,8 +55,15 @@ void MyView::Render()
 
 	GeometryPass();
 
-	RenderObjectList(m_model->getObjectList());
-	RenderWorldSceneNode(m_model->getWorldNode());
+	MyModel *model = dynamic_cast<MyModel *>(m_model);
+
+	for (Character *iter : model->getHeroes())
+		RenderCharacter(iter);
+	for (Character *iter : model->getMonsters())
+		RenderCharacter(iter);
+
+	//RenderObjectList(m_model->getObjectList());
+	//RenderWorldSceneNode(m_model->getWorldNode());
 
 	LightPass();
 

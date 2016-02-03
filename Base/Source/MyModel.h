@@ -3,7 +3,7 @@
 
 #include "Model_3D.h"
 
-#include "Projectile\ProjectileManager.h"
+#include "Character.h"
 
 class MyModel : public Model_3D
 {
@@ -21,12 +21,18 @@ public:
 
 	virtual void SetCommands(WEAPON_COMMANDS command, bool _bool = true) { weapon_commands.at(command) = _bool; }
 
-	virtual ProjectileManager GetProjectileManager() { return m_projectileManager; }
+	virtual std::array<Character *, 3> getHeroes() { return heroes; }
+	virtual std::vector<Character *> getMonsters() { return monsters; }
 
 private:
 	std::map<WEAPON_COMMANDS, bool> weapon_commands;
 
-	ProjectileManager m_projectileManager;
+	std::array<Character *, 3> heroes;
+	Character *monster;
+	std::vector<Character *> monsters;
+
+	void RandomiseStats(Character *character);
+	void UpdateRoles();
 
 };
 

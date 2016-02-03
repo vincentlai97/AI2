@@ -3,8 +3,6 @@
 #include "MeshBuilder.h"
 #include "LoadTGA.h"
 
-#include "Character.h"
-
 MyModel::MyModel() : Model_3D()
 {
 	for (auto iter : all_weapon_commands)
@@ -15,29 +13,13 @@ MyModel::~MyModel()
 {
 }
 
-
-
-enum STATS
-{
-	STR,
-	DEX,
-	INT
-};
-
-
-void RandomiseStats(Character *character);
-void UpdateRoles();
-
 static Mesh *mesh;
 static Object *object;
 static SceneNode *node;
 
-std::array<Character *, 3> heroes;
 Mesh *knightMesh;
 Mesh *archerMesh;
 Mesh *healerMesh;
-Character *monster;
-static std::vector<Character *> monsters;
 Mesh *monsterMesh;
 
 void MyModel::Init()
@@ -73,7 +55,7 @@ void MyModel::Init()
 	m_objectList.push_back(object);
 	monster = new Character();
 	monster->object = object;
-	monster->role = ROLE::MONSTER;
+	monster->role = Character::ROLE::MONSTER;
 	monsters.push_back(monster);
 	
 
@@ -92,13 +74,13 @@ void MyModel::Update(double dt)
 		std::cout << "Hero " << (char)('0' + count) << ": ";
 		switch (heroes[count]->role)
 		{
-		case ROLE::KNIGHT:
+		case Character::ROLE::KNIGHT:
 			std::cout << "Knight";
 			break;
-		case ROLE::ARCHER:
+		case Character::ROLE::ARCHER:
 			std::cout << "Archer";
 			break;
-		case ROLE::HEALER:
+		case Character::ROLE::HEALER:
 			std::cout << "Healer";
 			break;
 		}
@@ -107,29 +89,29 @@ void MyModel::Update(double dt)
 
 	for (int count = 0; count < 3; ++count)
 	{
-		heroes[count]->UpdateState(heroes, monsters);
+		heroes[count]->UpdateState(heroes, monsters, dt);
 	}
-	monster->UpdateState(heroes, monsters);
+	monster->UpdateState(heroes, monsters, dt);
 	for (int count = 0; count < 3; ++count)
 	{
-		heroes[count]->Update();
+		heroes[count]->Update(dt);
 	}
-	monster->Update();
+	monster->Update(dt);
 }
 
-void RandomiseStats(Character *character)
+void MyModel::RandomiseStats(Character *character)
 {
-	character->stats[STR] = rand() % 100;
-	character->stats[DEX] = rand() % 100;
-	character->stats[INT] = rand() % 100;
-	character->hp = character->stats[STR];
+	character->stats[Character::STR] = rand() % 100;
+	character->stats[Character::DEX] = rand() % 100;
+	character->stats[Character::INT] = rand() % 100;
+	character->hp = 50 + character->stats[Character::STR] / 2.f;
 }
 
 //#define stats(x, y) heroes[x].stats[y]
 #define cmp_stats(x, y, z) heroes[x]->stats[z] < heroes[y]->stats[z]
 #define add_weights(x, y, z, w) weights[0][w] = x; weights[1][w] = y; weights[2][w] = z
 
-void UpdateRoles()
+void MyModel::UpdateRoles()
 {
 	std::array<std::array<float, 3>, 3> weights;
 
@@ -222,7 +204,7 @@ void UpdateRoles()
 			hStat = _count;
 		}
 	}
-	heroes[hHero]->role = (ROLE)hStat;
+	heroes[hHero]->role = (Character::ROLE)hStat;
 	highest = 0;
 	int _hHero, _hStat;
 	for (int count = 0; count < 3; ++count)
@@ -236,26 +218,26 @@ void UpdateRoles()
 			_hStat = _count;
 		}
 	}
-	heroes[_hHero]->role = (ROLE)_hStat;
+	heroes[_hHero]->role = (Character::ROLE)_hStat;
 	for (int count = 0; count < 3; ++count)
 	for (int _count = 0; _count < 3; ++_count)
 	{
 		if (count != hHero && _count != hStat)
 		if (count != _hHero && _count != _hStat)
-			heroes[count]->role = (ROLE)_count;
+			heroes[count]->role = (Character::ROLE)_count;
 	}
 
 	for (int count = 0; count < 3; ++count)
 	{
 		switch (heroes[count]->role)
 		{
-		case ROLE::KNIGHT:
+		case Character::ROLE::KNIGHT:
 			heroes[count]->object->mesh = knightMesh;
 			break;
-		case ROLE::ARCHER:
+		case Character::ROLE::ARCHER:
 			heroes[count]->object->mesh = archerMesh;
 			break;
-		case ROLE::HEALER:
+		case Character::ROLE::HEALER:
 			heroes[count]->object->mesh = healerMesh;
 			break;
 		default:
