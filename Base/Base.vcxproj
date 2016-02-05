@@ -26,6 +26,7 @@
     <ClCompile Include="Source\MeshBuilder.cpp" />
     <ClCompile Include="Source\Model.cpp" />
     <ClCompile Include="Source\Model_3D.cpp" />
+    <ClCompile Include="Source\MsgBoard.cpp" />
     <ClCompile Include="Source\MyModel.cpp" />
     <ClCompile Include="Source\MyView.cpp" />
     <ClCompile Include="Source\OrientedBoundingBox.cpp" />
@@ -60,6 +61,7 @@
     <ClInclude Include="Source\MeshBuilder.h" />
     <ClInclude Include="Source\Model.h" />
     <ClInclude Include="Source\Model_3D.h" />
+    <ClInclude Include="Source\MsgBoard.h" />
     <ClInclude Include="Source\MyModel.h" />
     <ClInclude Include="Source\MyView.h" />
     <ClInclude Include="Source\Object.h" />

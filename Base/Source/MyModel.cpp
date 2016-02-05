@@ -3,6 +3,8 @@
 #include "MeshBuilder.h"
 #include "LoadTGA.h"
 
+#include "MsgBoard.h"
+
 MyModel::MyModel() : Model_3D()
 {
 	for (auto iter : all_weapon_commands)
@@ -68,6 +70,8 @@ void MyModel::Init()
 	spawnTimer = 10.f;
 }
 
+MsgBoard msgboard;
+
 void MyModel::Update(double dt)
 {
 	Model_3D::Update(dt);
@@ -79,13 +83,58 @@ void MyModel::Update(double dt)
 		switch (heroes[count]->role)
 		{
 		case Character::ROLE::KNIGHT:
-			std::cout << "Knight";
+			std::cout << "Knight: ";
+			switch (heroes[count]->state)
+			{
+			case Character::STATE::KNIGHT_IDLE:
+				std::cout << "IDLE";
+				break;
+			case Character::STATE::KNIGHT_MOVE:
+				std::cout << "MOVE";
+				break;
+			case Character::STATE::KNIGHT_ATTACK:
+				std::cout << "ATTACK";
+				break;
+			case Character::STATE::KNIGHT_PROTECT:
+				std::cout << "PROTECT";
+				break;
+			}
 			break;
 		case Character::ROLE::ARCHER:
-			std::cout << "Archer";
+			std::cout << "Archer: ";
+			switch (heroes[count]->state)
+			{
+			case Character::STATE::ARCHER_IDLE:
+				std::cout << "IDLE";
+				break;
+			case Character::STATE::ARCHER_MOVE:
+				std::cout << "MOVE";
+				break;
+			case Character::STATE::ARCHER_ATTACK:
+				std::cout << "ATTACK";
+				break;
+			case Character::STATE::ARCHER_RETREAT:
+				std::cout << "RETREAT";
+				break;
+			}
 			break;
 		case Character::ROLE::HEALER:
-			std::cout << "Healer";
+			std::cout << "Healer: ";
+			switch (heroes[count]->state)
+			{
+			case Character::STATE::HEALER_IDLE:
+				std::cout << "IDLE";
+				break;
+			case Character::STATE::HEALER_MOVE:
+				std::cout << "MOVE";
+				break;
+			case Character::STATE::HEALER_HEAL:
+				std::cout << "HEAL";
+				break;
+			case Character::STATE::HEALER_RETREAT:
+				std::cout << "RETREAT";
+				break;
+			}
 			break;
 		}
 		std::cout << std::endl;
@@ -93,7 +142,7 @@ void MyModel::Update(double dt)
 
 	for (int count = 0; count < 3; ++count)
 	{
-		heroes[count]->UpdateState(heroes, monsters, dt);
+		heroes[count]->UpdateState(heroes, monsters, dt, msgboard);
 	}
 	for (int count = 0; count < 3; ++count)
 	{
@@ -116,7 +165,7 @@ void MyModel::Update(double dt)
 	}
 	for (Character *iter : monsters)
 	{
-		iter->UpdateState(heroes, monsters, dt);
+		iter->UpdateState(heroes, monsters, dt, msgboard);
 	}
 	for (Character *iter : monsters)
 	{
@@ -297,3 +346,8 @@ void MyModel::UpdateRoles()
 //#undef stats(x, y)
 #undef cmp_stats(x, y, z)
 #undef add_weights(x, y, z, w)
+
+MsgBoard MyModel::getmsgs()
+{
+	return msgboard;
+}

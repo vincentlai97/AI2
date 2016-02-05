@@ -2,7 +2,7 @@
 
 #include "gtx\transform.hpp"
 
-void Character::UpdateState(std::array<Character *, 3> heroes, std::vector<Character *> monsters, double dt)
+void Character::UpdateState(std::array<Character *, 3> heroes, std::vector<Character *> monsters, double dt, MsgBoard &msgboard)
 {
 	float monsterDist = 100;
 	Character *monster;
@@ -17,26 +17,47 @@ void Character::UpdateState(std::array<Character *, 3> heroes, std::vector<Chara
 	switch (role)
 	{
 	case ROLE::KNIGHT:
-		if (monsterDist < 2)
+		if (attacked)
 		{
-			state = STATE::KNIGHT_ATTACK;
+			if (attacker == NULL) attacked = false;
+			CallForHeal(heroes, msgboard);
 		}
-		else if (monsterDist < 15)
+		if (getMaxHP() > hp)
 		{
-			state = STATE::KNIGHT_MOVE;
-			target = monster;
+			msgboard.msgboard.at(1) = false;
+		}
+		if (state == STATE::KNIGHT_PROTECT)
+		{
+			if (target == attacker) state = STATE::KNIGHT_ATTACK;
 		}
 		else
-			state = STATE::KNIGHT_IDLE;
+		{
+			if (monsterDist < 2)
+			{
+				state = STATE::KNIGHT_ATTACK;
+			}
+			else if (monsterDist < 15)
+			{
+				state = STATE::KNIGHT_MOVE;
+				target = monster;
+			}
+			else
+				state = STATE::KNIGHT_IDLE;
+		}
 		break;
 	case ROLE::ARCHER:
 		if (attacked)
 		{
-			if (glm::distance(getPos(), attacker->getPos()) > 5) attacked = false;
-			else state = STATE::ARCHER_RETREAT;
+			if (attacker == NULL || glm::distance(getPos(), attacker->getPos()) > 5) attacked = false;
+			else
+			{
+				state = STATE::ARCHER_RETREAT;
+				CallForHelp(heroes, msgboard);
+			}
 		}
 		if (!attacked)
 		{
+			msgboard.msgboard.at(0) = false;
 			if (monsterDist < 10)
 			{
 				state = STATE::ARCHER_ATTACK;
@@ -53,9 +74,10 @@ void Character::UpdateState(std::array<Character *, 3> heroes, std::vector<Chara
 	case ROLE::HEALER:
 		if (attacked)
 		{
-			if (glm::distance(getPos(), attacker->getPos()) > 5) attacked = false;
+			if (attacker == NULL || glm::distance(getPos(), attacker->getPos()) > 5) attacked = false;
 			else state = STATE::ARCHER_RETREAT;
-		}
+			CallForHelp(heroes, msgboard);
+		} 
 		if (!attacked)
 		{
 			Character *knight;
@@ -127,6 +149,8 @@ void Character::Update(double dt)
 		case STATE::KNIGHT_IDLE:
 			break;
 		case STATE::KNIGHT_MOVE:
+		case STATE::KNIGHT_PROTECT:
+			if (target != NULL)
 			Move(target->getPos() - getPos(), dt);
 			break;
 		case STATE::KNIGHT_ATTACK:
@@ -168,7 +192,7 @@ void Character::Update(double dt)
 			break;
 		case STATE::HEALER_HEAL:
 			if (target != NULL)
-			if (attackBuffer < 0 && target->hp < target->getMaxHP())
+			if (attackBuffer < 0 && target->hp <= target->getMaxHP())
 			{
 				target->hp += 10;
 				attackBuffer = 2.f;
@@ -208,6 +232,27 @@ void Character::Move(glm::vec3 direction, double dt)
 	else if (direction.x > 0 && getPos().x > 50) direction.x = 0;
 	if (direction.y < 0 && getPos().y < -40) direction.y = 0;
 	else if (direction.y > 0 && getPos().y > 40) direction.y = 0;
-	if (direction.length() != 0)
-		object->translation *= glm::translate(glm::normalize(direction) * (float)dt * (8.f + stats[1] / 25.f));
+
+	object->translation *= glm::translate(glm::normalize(direction) * (float)dt * (role == ROLE::MONSTER ? 5.f : 8.f + stats[1] / 25.f));
+}
+
+void Character::CallForHelp(std::array<Character *, 3> heroes, MsgBoard &msgboard)
+{
+	if (this->role == ROLE::ARCHER)
+		msgboard.msgboard.at(0) = true;
+	else if (this->role == ROLE::HEALER)
+		msgboard.msgboard.at(1) = true;
+	for (Character *iter : heroes)
+	{
+		if (iter->role == ROLE::KNIGHT)
+		{
+			iter->state = STATE::KNIGHT_PROTECT;
+			iter->target = this->attacker;
+		}
+	}
+}
+
+void Character::CallForHeal(std::array<Character *, 3> heroes, MsgBoard &msgboard)
+{
+	msgboard.msgboard.at(2) = true;
 }

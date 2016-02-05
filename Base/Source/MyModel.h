@@ -23,6 +23,7 @@ public:
 
 	virtual std::array<Character *, 3> getHeroes() { return heroes; }
 	virtual std::vector<Character *> getMonsters() { return monsters; }
+	virtual MsgBoard getmsgs();
 
 private:
 	std::map<WEAPON_COMMANDS, bool> weapon_commands;

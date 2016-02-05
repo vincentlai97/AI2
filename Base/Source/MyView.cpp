@@ -1,6 +1,7 @@
 #include "MyView.h"
 
 #include "MeshBuilder.h"
+#include "LoadTGA.h"
 
 #define VIEW_DIMENSIONS 2
 
@@ -53,6 +54,11 @@ void MyView::Render()
 #endif
 	modelStack.push(glm::mat4(1.f));
 
+	static Mesh* mesh = MeshBuilder::GenerateText("text", 16, 16);
+	int count = 0;
+	for (count; count < 1; ++count)
+		mesh->textureID[0] = LoadTGA("Image/arrow.tga");
+
 	GeometryPass();
 
 	MyModel *model = dynamic_cast<MyModel *>(m_model);
@@ -61,6 +67,10 @@ void MyView::Render()
 		RenderCharacter(iter);
 	for (Character *iter : model->getMonsters())
 		RenderCharacter(iter);
+
+	for (int count = 0; count < 3; ++count)
+	if (model->getmsgs().msgboard[count])
+		RenderTextOnScreen(mesh, model->getmsgs().msgs.at(count), Color(1, 0, 0), 30, 0, 30 * count);
 
 	//RenderObjectList(m_model->getObjectList());
 	//RenderWorldSceneNode(m_model->getWorldNode());
